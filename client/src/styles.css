@@ -445,6 +445,17 @@ button.recording {
   border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
 }
 
+/* Экран ПИН-кода: первое, что видит оператор, и ничего кроме него. */
+.lock {
+  margin-top: 8vh;
+}
+
+.lock input {
+  font-size: 24px;
+  letter-spacing: 0.3em;
+  text-align: center;
+}
+
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 13px;
@@ -487,6 +498,12 @@ code {
   background: var(--line);
   border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Правило браузера для [hidden] задаёт display:none, но проигрывает по
+   специфичности классу выше. Без этой строки навигация видна на экране замка. */
+.tabs[hidden] {
+  display: none;
 }
 
 .tabs button {

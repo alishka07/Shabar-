@@ -1,6 +1,7 @@
 import * as api from './api.js';
 import { BACKOFF_MS, BATCH_SIZE, CHUNK_BYTES, SCHEMA_VERSION, SYNC_INTERVAL_MS } from './config.js';
-import { db, notifyDataChange } from './db.js';
+import { db, getAttachmentBlob, getReport, notifyDataChange } from './db.js';
+import { isUnlocked } from './vault.js';
 
 /**
  * Ядро проекта.
@@ -53,8 +54,14 @@ function batches(items, size) {
   return out;
 }
 
-/** Донесение в том виде, в каком его ждёт сервер. */
-async function toWire(report) {
+/**
+ * Донесение в том виде, в каком его ждёт сервер.
+ *
+ * Здесь запись впервые за всё время расшифровывается: в базе она лежит
+ * запечатанной, ключ живёт только в памяти вкладки.
+ */
+async function toWire(reportId) {
+  const report = await getReport(reportId);
   const attachments = await db.attachments.where('report_id').equals(report.id).toArray();
   return {
     id: report.id,
@@ -107,18 +114,20 @@ async function sendReports() {
   const due = tasks.filter((task) => (task.next_attempt_at ?? 0) <= now);
   if (!due.length) return;
 
-  const reports = (await db.reports.bulkGet(due.map((task) => task.report_id)))
+  // Приоритет и время создания лежат в базе открытыми, поэтому очередь
+  // выстраивается без единой операции расшифровки.
+  const rows = (await db.reports.bulkGet(due.map((task) => task.report_id)))
     .filter(Boolean)
     .sort(compareForSend);
 
-  for (const batch of batches(reports, BATCH_SIZE)) {
-    const ids = batch.map((report) => report.id);
+  for (const batch of batches(rows, BATCH_SIZE)) {
+    const ids = batch.map((row) => row.id);
     await db.reports.where('id').anyOf(ids).modify({ sync_state: 'sending' });
     notifyDataChange();
 
     let results;
     try {
-      results = await api.postReports(await Promise.all(batch.map(toWire)));
+      results = await api.postReports(await Promise.all(ids.map(toWire)));
     } catch (error) {
       // Связь оборвалась. Мы не знаем, дошла пачка или нет, и это неважно:
       // повтор с теми же id безопасен.
@@ -160,8 +169,12 @@ async function uploadAttachment(attachment) {
   await db.attachments.update(attachment.id, { state: 'uploading', uploaded_bytes: offset });
   notifyDataChange();
 
+  // Расшифровываем один раз на вложение и режем на куски уже открытые байты.
+  const blob = await getAttachmentBlob(attachment.id);
+  if (!blob) throw new Error('вложение потеряно в локальной базе');
+
   while (offset < attachment.bytes) {
-    const slice = attachment.blob.slice(offset, offset + CHUNK_BYTES);
+    const slice = blob.slice(offset, offset + CHUNK_BYTES);
     const response = await api.postChunk(attachment.id, offset, slice);
 
     if (response.received_bytes === offset && slice.size > 0) {
@@ -211,6 +224,10 @@ async function uploadAttachments() {
 /** Один проход очереди. Повторный вызов во время работы ничего не делает. */
 export async function sync() {
   if (running) return;
+  // Пока ПИН-код не введён, ключа нет, а без него донесение не расшифровать и
+  // не отправить. Молча ждём, ничего не ломая: записи лежат в очереди.
+  if (!isUnlocked()) return;
+
   running = true;
   emitStatus();
   try {

@@ -12,6 +12,10 @@ node_modules/
 dist/
 .vite/
 
+# Среда выполнения ONNX приезжает с npm и раскладывается scripts/copy-ort.mjs.
+# Модель Silero в public/models/ при этом хранится в репозитории: её на npm нет.
+client/public/ort/
+
 # OS / editors
 .DS_Store
 Thumbs.db

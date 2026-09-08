@@ -50,12 +50,25 @@ self.addEventListener('activate', (event) => {
  */
 self.addEventListener('message', (event) => {
   if (event.data?.type !== 'precache') return;
-  event.waitUntil(
-    caches
-      .open(SHELL_CACHE)
-      .then((cache) => Promise.allSettled(event.data.urls.map((url) => cache.add(url)))),
-  );
+  event.waitUntil(precacheMissing(event.data.urls));
 });
+
+/**
+ * Кладёт в кэш только то, чего там ещё нет.
+ *
+ * `cache.add` перекачивает файл, даже если он уже лежит. Среда выполнения
+ * распознавания речи весит 14 МБ, и без этой проверки каждый запуск приложения
+ * при связи тянул бы её заново — ровно то расточительство канала, против
+ * которого весь проект.
+ */
+async function precacheMissing(urls) {
+  const cache = await caches.open(SHELL_CACHE);
+  const missing = [];
+  for (const url of urls) {
+    if (!(await cache.match(url, { ignoreVary: true }))) missing.push(url);
+  }
+  await Promise.allSettled(missing.map((url) => cache.add(url)));
+}
 
 function isTile(url) {
   return /tile\.openstreetmap\.org/.test(url.hostname) || /\/\d+\/\d+\/\d+\.png$/.test(url.pathname);

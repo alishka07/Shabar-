@@ -97,6 +97,18 @@ KHABAR_MAX_ATTACHMENT_BYTES = int(
     os.environ.get("KHABAR_MAX_ATTACHMENT_BYTES", 32 * 1024 * 1024)
 )
 
+# Распознавание речи. По умолчанию выключено: модель весит от полугигабайта и
+# скачивается при первом запуске, а на демо это не всегда уместно.
+# Включается одной переменной: KHABAR_ASR_ENABLED=1.
+KHABAR_ASR_ENABLED = os.environ.get("KHABAR_ASR_ENABLED", "0") == "1"
+# tiny | base | small | medium | large-v3 | large-v3-turbo, либо путь к своей модели.
+# small — разумный старт на процессоре. Для казахского смотрите модели ISSAI.
+KHABAR_ASR_MODEL = os.environ.get("KHABAR_ASR_MODEL", "small")
+KHABAR_ASR_DEVICE = os.environ.get("KHABAR_ASR_DEVICE", "cpu")
+# int8 на процессоре, float16 на видеокарте.
+KHABAR_ASR_COMPUTE_TYPE = os.environ.get("KHABAR_ASR_COMPUTE_TYPE", "int8")
+KHABAR_ASR_BEAM_SIZE = int(os.environ.get("KHABAR_ASR_BEAM_SIZE", "5"))
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

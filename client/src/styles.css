@@ -611,6 +611,22 @@ tr.is-new {
   margin-top: 6px;
 }
 
+/* Расшифровка — черновик рядом с аудио. Выделена, но не выдаётся за факт. */
+.transcript {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-left: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  font-size: 13px;
+}
+
+audio {
+  display: block;
+  margin-top: 6px;
+  max-width: 260px;
+  height: 32px;
+}
+
 .thumbs img {
   width: 64px;
   height: 64px;

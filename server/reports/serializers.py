@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from .models import (
     ATTACHMENT_KINDS,
+    LANGUAGES,
     POSITION_SOURCES,
     PRIORITIES,
     REPORT_TYPES,
@@ -42,6 +43,10 @@ class ReportInSerializer(serializers.Serializer):
     priority = serializers.ChoiceField(choices=PRIORITIES, default="routine")
     description = serializers.CharField(required=False, allow_blank=True, default="")
     quantity = serializers.IntegerField(required=False, allow_null=True)
+    # Поле добавлено после первой версии контракта. Оно необязательное и с
+    # умолчанием, поэтому старый клиент продолжает работать без него и
+    # schema_version повышать не нужно.
+    language = serializers.ChoiceField(choices=LANGUAGES, required=False, default="ru")
     created_at_device = serializers.DateTimeField()
     position = PositionSerializer(required=False, allow_null=True)
     attachments = AttachmentInSerializer(many=True, required=False, default=list)
@@ -60,6 +65,7 @@ class ReportInSerializer(serializers.Serializer):
             priority=validated.get("priority", "routine"),
             description=validated.get("description", ""),
             quantity=validated.get("quantity"),
+            language=validated.get("language", "ru"),
             created_at_device=validated["created_at_device"],
             lat=position.get("lat"),
             lon=position.get("lon"),
@@ -90,6 +96,7 @@ class AttachmentOutSerializer(serializers.ModelSerializer):
             "received_bytes",
             "complete",
             "transcript",
+            "transcript_status",
         ]
 
 
@@ -108,6 +115,7 @@ class ReportOutSerializer(serializers.ModelSerializer):
             "priority",
             "description",
             "quantity",
+            "language",
             "created_at_device",
             "received_at_server",
             "position",

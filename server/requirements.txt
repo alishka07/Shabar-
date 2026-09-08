@@ -3,3 +3,8 @@ djangorestframework==3.15.2
 django-cors-headers==4.4.0
 psycopg[binary]==3.2.1
 gunicorn==23.0.0
+
+# Распознавание речи. Whisper на CTranslate2: кратно быстрее и экономнее по
+# памяти эталонной реализации, без torch. Модель скачивается при первом запуске
+# и по умолчанию распознавание выключено — см. KHABAR_ASR_ENABLED в settings.py.
+faster-whisper==1.2.1

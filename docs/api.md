@@ -63,6 +63,7 @@ Content-Type: application/json
     "source": "gnss"
   },
   "quantity": 1,
+  "language": "ru",
   "attachments": [
     { "id": "1b0d1f4a-2c3e-4d5f-8a9b-0c1d2e3f4a5b",
       "kind": "photo", "bytes": 184320, "content_type": "image/jpeg" }
@@ -73,6 +74,9 @@ Content-Type: application/json
 - `type`: `detection`, `unit_status`, `equipment_fault`, `supply_request`, `incident`.
 - `priority`: `routine`, `urgent`.
 - `position.source`: `gnss`, `manual`, `map`, `none`.
+- `language`: `ru`, `kk`, `auto`. Язык голосового донесения, оператор выбирает
+  его в приложении. Поле необязательное, умолчание `ru`, поэтому клиент,
+  который о нём не знает, продолжает работать и `schema_version` не меняется.
 - `attachments[].id` — тоже UUID с клиента: он адресует куски при догрузке.
   Байты в этом теле не передаются, только объявление о намерении их догрузить.
 - `received_at_server` клиент не присылает, сервер проставляет сам.
@@ -121,8 +125,14 @@ GET /api/v1/sync/attachments/{attachment_id}/chunk
 ```
 
 Когда аудиовложение принято целиком, сервер запускает разбор речи
-(`server/reports/asr.py`) и кладёт результат в `transcript`. Сейчас это
-заглушка, возвращающая пустую строку.
+(`server/reports/asr.py`) в фоновом потоке и кладёт результат в `transcript`.
+Ответ клиенту при этом не ждёт распознавания: держать соединение с телефоном в
+поле на десятки секунд нельзя.
+
+Ход разбора виден в `transcript_status`: `pending` (принято, ждёт), `running`
+(распознаётся), `done`, `failed`, `disabled` (распознавание на сервере
+выключено). Панель управления опрашивает список и показывает статус, пока текста
+нет.
 
 ---
 

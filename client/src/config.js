@@ -14,6 +14,19 @@ export const PRIORITIES = [
   { value: 'urgent', label: 'Срочный' },
 ];
 
+/**
+ * Язык голосового донесения.
+ *
+ * Оператор выбирает его один раз в настройках, и это осознанно вместо
+ * автоопределения: на короткой зашумлённой записи с переходами между языками
+ * определитель ошибается чаще, чем человек, который и так знает, на чём говорит.
+ */
+export const LANGUAGES = [
+  { value: 'ru', label: 'Русский' },
+  { value: 'kk', label: 'Қазақша' },
+  { value: 'auto', label: 'Определять автоматически' },
+];
+
 export const POSITION_SOURCE_LABELS = {
   gnss: 'спутник',
   manual: 'вручную',
@@ -52,6 +65,7 @@ export const DEFAULT_ZOOM = 12;
 const DEVICE_ID_KEY = 'khabar.device_id';
 const AUTHOR_KEY = 'khabar.author';
 const COUNTER_KEY = 'khabar.report_counter';
+const LANGUAGE_KEY = 'khabar.language';
 
 /** Идентификатор устройства переживает перезапуск и попадает в каждое донесение. */
 export function deviceId() {
@@ -69,6 +83,14 @@ export function author() {
 
 export function setAuthor(value) {
   localStorage.setItem(AUTHOR_KEY, value);
+}
+
+export function language() {
+  return localStorage.getItem(LANGUAGE_KEY) || 'ru';
+}
+
+export function setLanguage(value) {
+  localStorage.setItem(LANGUAGE_KEY, value);
 }
 
 /**

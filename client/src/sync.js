@@ -72,6 +72,7 @@ async function toWire(reportId) {
     priority: report.priority,
     description: report.description,
     quantity: report.quantity,
+    language: report.language,
     created_at_device: report.created_at_device,
     position: report.position,
     // Байты вложений сюда не попадают — только объявление о намерении догрузить.

@@ -5,15 +5,18 @@
   "type": "module",
   "description": "ХАБАР — полевой PWA-клиент: локальная база и очередь синхронизации",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "postinstall": "node scripts/copy-ort.mjs",
+    "dev": "npm run copy-ort && vite",
+    "build": "npm run copy-ort && vite build",
+    "preview": "vite preview",
+    "copy-ort": "node scripts/copy-ort.mjs"
   },
   "dependencies": {
     "dexie": "^4.0.8",
     "leaflet": "^1.9.4"
   },
   "devDependencies": {
-    "vite": "^5.4.8"
+    "vite": "^5.4.8",
+    "onnxruntime-web": "^1.29.0"
   }
 }

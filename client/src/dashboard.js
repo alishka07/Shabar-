@@ -61,14 +61,39 @@ function thumbs(report) {
   const images = photos
     .map((item) => `<img src="${attachmentContentUrl(item.id)}" alt="фото донесения" />`)
     .join('');
-  const transcripts = audio
-    .map((item) =>
-      item.transcript
-        ? `<div class="hint">Расшифровка: ${escapeHtml(item.transcript)}</div>`
-        : '<div class="hint">Аудио получено, расшифровка не подключена</div>',
-    )
-    .join('');
+  const transcripts = audio.map(transcriptBlock).join('');
   return `${images ? `<div class="thumbs">${images}</div>` : ''}${transcripts}`;
+}
+
+const TRANSCRIPT_HINTS = {
+  pending: 'аудио принято, ожидает распознавания',
+  running: 'распознаётся…',
+  disabled: 'распознавание на сервере выключено',
+  failed: 'распознать не удалось',
+};
+
+/**
+ * Расшифровка рядом с исходным аудио, а не вместо него.
+ *
+ * По-казахски и на смешанной речи открытые модели ошибаются, поэтому текст
+ * здесь — черновик для оператора. Слушать оригинал он должен иметь возможность
+ * всегда, каким бы уверенным ни выглядел текст.
+ */
+function transcriptBlock(item) {
+  // Пока вложение не доехало целиком, играть нечего: байты ещё догружаются.
+  const player = item.complete
+    ? `<audio controls preload="none" src="${attachmentContentUrl(item.id)}"></audio>`
+    : '<div class="hint">аудио догружается</div>';
+
+  if (item.transcript_status === 'done' && item.transcript) {
+    return `${player}<div class="transcript">${escapeHtml(item.transcript)}</div>`;
+  }
+  if (item.transcript_status === 'done') {
+    return `${player}<div class="hint">речь не распознана</div>`;
+  }
+  const hint = TRANSCRIPT_HINTS[item.transcript_status] || 'аудио принято';
+  const detail = item.transcript ? `: ${escapeHtml(item.transcript)}` : '';
+  return `${player}<div class="hint">${hint}${detail}</div>`;
 }
 
 function renderRows() {

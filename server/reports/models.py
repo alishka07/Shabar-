@@ -24,6 +24,19 @@ POSITION_SOURCES = [
 
 ATTACHMENT_KINDS = [("photo", "Фото"), ("audio", "Аудио")]
 
+# Язык голосового донесения. Оператор выбирает его в настройках приложения:
+# автоопределение на короткой зашумлённой записи с переключением языков
+# ошибается чаще, чем человек, который и так знает, на чём говорит.
+LANGUAGES = [("ru", "Русский"), ("kk", "Қазақша"), ("auto", "Определять автоматически")]
+
+TRANSCRIPT_STATUSES = [
+    ("pending", "Ожидает"),
+    ("running", "Распознаётся"),
+    ("done", "Готово"),
+    ("failed", "Ошибка"),
+    ("disabled", "Распознавание выключено"),
+]
+
 
 class Report(models.Model):
     """Донесение.
@@ -44,6 +57,7 @@ class Report(models.Model):
     priority = models.CharField(max_length=16, choices=PRIORITIES, default="routine")
     description = models.TextField(blank=True)
     quantity = models.IntegerField(null=True, blank=True)
+    language = models.CharField(max_length=8, choices=LANGUAGES, default="ru")
 
     # Время устройства и время сервера разведены намеренно: разрыв между ними —
     # это и есть возраст донесения, пролежавшего в очереди без связи.
@@ -88,6 +102,9 @@ class Attachment(models.Model):
 
     # Заполняется разбором аудио на сервере, см. reports/asr.py.
     transcript = models.TextField(blank=True)
+    transcript_status = models.CharField(
+        max_length=16, choices=TRANSCRIPT_STATUSES, default="pending"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 

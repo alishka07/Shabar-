@@ -10,7 +10,7 @@ from rest_framework.parsers import BaseParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .asr import transcribe
+from .asr import transcribe_in_background
 from .models import SCHEMA_VERSION, Attachment, Report
 from .serializers import ReportInSerializer, ReportOutSerializer
 
@@ -180,9 +180,9 @@ class AttachmentChunkView(APIView):
 
         if became_complete and attachment.kind == "audio":
             # Разбор речи живёт на сервере намеренно: канал узкий, аудио уходит
-            # последним, модели на устройстве нет.
-            attachment.transcript = transcribe(attachment)
-            attachment.save(update_fields=["transcript"])
+            # последним, модели на устройстве нет. Уходит в фоновый поток —
+            # держать соединение с телефоном на время распознавания нельзя.
+            transcribe_in_background(attachment.id)
 
         return Response(attachment_state(attachment))
 

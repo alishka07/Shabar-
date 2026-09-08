@@ -1,6 +1,8 @@
 import {
   author,
   deviceId,
+  language,
+  LANGUAGES,
   nextReportNumber,
   POSITION_SOURCE_LABELS,
   PRIORITIES,
@@ -83,7 +85,12 @@ export function renderReportForm(root) {
           <button type="button" class="ghost" id="btn-record">Записать</button>
           <span class="hint" id="audio-state">нет записи</span>
         </div>
-        <p class="hint">Распознавание идёт на сервере после доставки: канал узкий, аудио уходит последним.</p>
+        <p class="hint">
+          Язык записи: <b>${LANGUAGES.find((item) => item.value === language())?.label}</b>,
+          меняется на вкладке «Ещё». Тишина в запись не попадает.
+          Распознавание идёт на сервере после доставки: канал узкий,
+          аудио уходит последним.
+        </p>
       </section>
 
       <button type="submit" class="primary big">Сохранить донесение</button>
@@ -174,19 +181,36 @@ export function renderReportForm(root) {
     paintPhotos();
   });
 
+  const GATE_LABELS = {
+    silero: 'тишина вырезается',
+    loudness: 'тишина вырезается по громкости',
+    off: 'пишем без обрезки',
+  };
+
   recordButton.addEventListener('click', async () => {
     if (recorder.recording) {
-      audioBlob = await recorder.stop();
+      const result = await recorder.stop();
+      audioBlob = result?.blob ?? null;
       recordButton.textContent = 'Записать заново';
       recordButton.classList.remove('recording');
-      audioState.textContent = audioBlob ? `запись ${formatBytes(audioBlob.size)}` : 'нет записи';
+
+      if (!audioBlob) {
+        audioState.textContent = 'нет записи';
+        return;
+      }
+      const trimmed = Math.round(result.trimmedMs / 1000);
+      audioState.textContent =
+        `запись ${Math.round(result.recordedMs / 1000)} с, ${formatBytes(audioBlob.size)}` +
+        (trimmed > 0 ? ` · срезано ${trimmed} с тишины` : '');
       return;
     }
+
     try {
-      await recorder.start();
+      audioState.textContent = 'готовим микрофон…';
+      const { mode } = await recorder.start();
       recordButton.textContent = 'Остановить';
       recordButton.classList.add('recording');
-      audioState.textContent = 'идёт запись…';
+      audioState.textContent = `идёт запись, ${GATE_LABELS[mode]}`;
     } catch {
       audioState.textContent = 'микрофон недоступен';
     }
@@ -208,6 +232,7 @@ export function renderReportForm(root) {
       priority: data.get('priority'),
       description: (data.get('description') || '').trim(),
       quantity: data.get('quantity') ? Number(data.get('quantity')) : null,
+      language: language(),
       created_at_device: new Date().toISOString(),
       position,
       sync_state: 'queued',

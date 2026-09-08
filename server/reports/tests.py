@@ -4,10 +4,11 @@
 """
 
 import tempfile
+import threading
 import uuid
 from urllib.parse import quote
 
-from django.test import TestCase, override_settings
+from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
 from .models import Attachment, Report
@@ -82,6 +83,19 @@ class SyncReportsTests(TestCase):
 
         self.assertEqual(results[0]["reason"], "schema_version")
         self.assertEqual(Report.objects.count(), 0)
+
+    def test_language_defaults_to_russian_for_a_client_that_does_not_send_it(self):
+        """Старый клиент не знает про поле языка — это не повод его отвергать."""
+        payload = sample_report(attachments=[])
+        payload.pop("language", None)
+
+        self.assertEqual(self.post([payload]).json()[0]["result"], "accepted")
+        self.assertEqual(Report.objects.get(pk=REPORT_ID).language, "ru")
+
+    def test_language_survives_round_trip(self):
+        self.post([sample_report(language="kk", attachments=[])])
+
+        self.assertEqual(Report.objects.get(pk=REPORT_ID).language, "kk")
 
     def test_position_source_survives_round_trip(self):
         self.post([sample_report(position={"lat": 51.0, "lon": 71.0, "source": "map"})])
@@ -163,6 +177,66 @@ class AttachmentChunkTests(TestCase):
     def test_unknown_attachment_is_404(self):
         url = reverse("attachment-chunk", args=[str(uuid.uuid4())])
         self.assertEqual(self.client.get(url).status_code, 404)
+
+
+class AudioTranscriptionTests(TransactionTestCase):
+    """Аудио доезжает и лежит, даже когда распознавание выключено.
+
+    Именно TransactionTestCase, а не TestCase: разбор уходит в фоновый поток со
+    своим соединением к базе, и незакоммиченных данных обычного теста он бы
+    просто не увидел.
+    """
+
+    AUDIO_ID = "2c1e2f5b-3d4f-4e60-9b0c-1d2e3f4a5b6c"
+
+    def setUp(self):
+        media_root = tempfile.TemporaryDirectory()
+        self.addCleanup(media_root.cleanup)
+        patched = override_settings(MEDIA_ROOT=media_root.name, KHABAR_ASR_ENABLED=False)
+        patched.enable()
+        self.addCleanup(patched.disable)
+
+        self.client.post(
+            reverse("sync-reports"),
+            [
+                sample_report(
+                    language="kk",
+                    attachments=[
+                        {
+                            "id": self.AUDIO_ID,
+                            "kind": "audio",
+                            "bytes": 4,
+                            "content_type": "audio/webm",
+                        }
+                    ],
+                )
+            ],
+            content_type="application/json",
+        )
+
+    def test_completed_audio_is_marked_disabled_not_failed(self):
+        url = reverse("attachment-chunk", args=[self.AUDIO_ID])
+        response = self.client.post(
+            f"{url}?offset=0", data=b"OggS", content_type="application/octet-stream"
+        )
+        self.assertTrue(response.json()["complete"])
+
+        # Разбор уходит в фоновый поток; дожидаемся, чтобы не ловить гонку.
+        for thread in threading.enumerate():
+            if thread.name.startswith("asr-"):
+                thread.join(timeout=10)
+
+        attachment = Attachment.objects.get(pk=self.AUDIO_ID)
+        self.assertEqual(attachment.transcript_status, "disabled")
+        self.assertEqual(attachment.transcript, "")
+
+    def test_dashboard_sees_the_audio_and_its_status(self):
+        payload = self.client.get(reverse("report-list")).json()
+        audio = payload[0]["attachments"][0]
+
+        self.assertEqual(audio["kind"], "audio")
+        self.assertEqual(audio["transcript_status"], "pending")
+        self.assertEqual(payload[0]["language"], "kk")
 
 
 class ReportListTests(TestCase):

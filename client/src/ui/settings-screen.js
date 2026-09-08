@@ -1,4 +1,4 @@
-import { author, deviceId, setAuthor } from '../config.js';
+import { author, deviceId, language, LANGUAGES, setAuthor, setLanguage } from '../config.js';
 import { db, wipeLocalData } from '../db.js';
 import { lock } from '../vault.js';
 import { escapeHtml } from './html.js';
@@ -15,6 +15,31 @@ export async function renderSettings(root) {
       </label>
       <p class="hint">Идентификатор устройства: <code>${escapeHtml(deviceId())}</code></p>
       <p class="hint">В локальной базе: донесений ${reports}, вложений ${attachments}.</p>
+    </section>
+
+    <section class="card">
+      <h2>Язык голосового донесения</h2>
+      <label class="field">
+        <select id="language">
+          ${LANGUAGES.map(
+            (item) =>
+              `<option value="${item.value}" ${
+                item.value === language() ? 'selected' : ''
+              }>${item.label}</option>`,
+          ).join('')}
+        </select>
+      </label>
+      <p class="hint">
+        Язык уходит вместе с донесением и передаётся распознавателю на сервере.
+        Выбор руками надёжнее автоопределения: на короткой записи с шумом и
+        переходами между языками определитель ошибается чаще, чем оператор,
+        который и так знает, на чём говорит.
+      </p>
+      <p class="hint">
+        По-русски распознавание работает хорошо. По-казахски — слабо, а смешанную
+        речь внутри одной фразы не держит ни одна открытая модель. Расшифровка на
+        пункте управления — черновик рядом с исходным аудио, а не готовый ответ.
+      </p>
     </section>
 
     <section class="card">
@@ -45,8 +70,8 @@ export async function renderSettings(root) {
     <section class="card">
       <h2>Что здесь ещё не сделано</h2>
       <p class="hint">
-        Разбор голосового донесения на сервере — заглушка: аудио доезжает до
-        пункта управления, расшифровки пока нет. Об этом говорим прямо,
+        Расшифровка приходит текстом, но по полям донесения не раскладывается:
+        <code>extract_fields</code> на сервере — заготовка. Об этом говорим прямо,
         а не умалчиваем.
       </p>
     </section>
@@ -54,6 +79,9 @@ export async function renderSettings(root) {
 
   const authorInput = root.querySelector('#author');
   authorInput.addEventListener('change', () => setAuthor(authorInput.value.trim()));
+
+  const languageSelect = root.querySelector('#language');
+  languageSelect.addEventListener('change', () => setLanguage(languageSelect.value));
 
   root.querySelector('#btn-lock').addEventListener('click', () => {
     lock();

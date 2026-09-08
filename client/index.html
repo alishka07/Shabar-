@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#11150f" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <title>ХАБАР — полевые донесения</title>
+  </head>
+  <body>
+    <header class="bar">
+      <span class="brand">ХАБАР</span>
+      <span id="conn" class="conn">…</span>
+    </header>
+
+    <main id="screen" class="screen"></main>
+
+    <nav class="tabs">
+      <button data-tab="new" class="is-active">Новое</button>
+      <button data-tab="list">Донесения</button>
+      <button data-tab="queue">Очередь</button>
+      <button data-tab="map">Карта</button>
+      <button data-tab="settings">Ещё</button>
+    </nav>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

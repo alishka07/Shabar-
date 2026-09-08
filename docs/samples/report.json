@@ -1,0 +1,27 @@
+[
+  {
+    "id": "9f1c2b7e-4d3a-4c11-9c8e-0a2b6d5e7f10",
+    "schema_version": 1,
+    "device_id": "dev-014",
+    "author": "Оператор 12",
+    "type": "equipment_fault",
+    "priority": "urgent",
+    "description": "Отказ радиостанции на машине 3",
+    "created_at_device": "2026-09-12T14:32:11+05:00",
+    "position": {
+      "lat": 51.1234,
+      "lon": 71.4567,
+      "accuracy_m": 12,
+      "source": "gnss"
+    },
+    "quantity": 1,
+    "attachments": [
+      {
+        "id": "1b0d1f4a-2c3e-4d5f-8a9b-0c1d2e3f4a5b",
+        "kind": "photo",
+        "bytes": 12,
+        "content_type": "image/jpeg"
+      }
+    ]
+  }
+]

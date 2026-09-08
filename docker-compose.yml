@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: khabar
+      POSTGRES_USER: khabar
+      POSTGRES_PASSWORD: khabar
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U khabar']
+      interval: 5s
+      retries: 10
+
+  server:
+    build: ./server
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    environment:
+      POSTGRES_DB: khabar
+      POSTGRES_USER: khabar
+      POSTGRES_PASSWORD: khabar
+      POSTGRES_HOST: db
+      DJANGO_DEBUG: '1'
+    volumes:
+      - ./server:/app
+      - media:/app/media
+    ports:
+      - '8000:8000'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  client:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      KHABAR_API: http://server:8000
+    volumes:
+      - ./client:/app
+      - client_modules:/app/node_modules
+    ports:
+      - '5173:5173'
+    depends_on:
+      - server
+
+volumes:
+  pgdata:
+  media:
+  client_modules:

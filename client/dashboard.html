@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#11150f" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <title>ХАБАР — пункт управления</title>
+  </head>
+  <body>
+    <header class="bar">
+      <span class="brand">ХАБАР · ПУНКТ УПРАВЛЕНИЯ</span>
+      <span id="conn" class="conn">…</span>
+    </header>
+
+    <main class="screen dash">
+      <div class="filters">
+        <select id="filter-type"><option value="">Все типы</option></select>
+        <select id="filter-priority">
+          <option value="">Любой приоритет</option>
+          <option value="urgent">Только срочные</option>
+          <option value="routine">Только обычные</option>
+        </select>
+      </div>
+
+      <div class="dash-grid">
+        <section class="card">
+          <h2>Донесения <span class="count" id="total">0</span></h2>
+          <table>
+            <thead>
+              <tr>
+                <th>№</th>
+                <th>Тип</th>
+                <th>Создано в поле</th>
+                <th>Принято сервером</th>
+                <th>Координаты</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </section>
+
+        <section class="card">
+          <div class="dash-map" id="map"></div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/src/dashboard.js"></script>
+  </body>
+</html>

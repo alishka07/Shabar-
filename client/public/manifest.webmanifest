@@ -1,0 +1,19 @@
+{
+  "name": "ХАБАР — полевые донесения",
+  "short_name": "ХАБАР",
+  "description": "Создание и доставка полевых донесений без связи",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#11150f",
+  "theme_color": "#11150f",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
